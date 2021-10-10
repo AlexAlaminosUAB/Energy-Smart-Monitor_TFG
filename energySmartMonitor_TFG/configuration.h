@@ -3,3 +3,13 @@
 #endif
 
 #define DEVICE_NAME "EnergySmartMonitor_01"
+
+#define WIFI_TIMEOUT 20000
+
+#define WIFI_RECOVER_TIME_MS 20000
+
+#if CONFIG_FREERTOS_UNICORE
+  #define ARDUINO_RUNNING_CORE 0
+#else
+  #define ARDUINO_RUNNING_CORE 1
+#endif

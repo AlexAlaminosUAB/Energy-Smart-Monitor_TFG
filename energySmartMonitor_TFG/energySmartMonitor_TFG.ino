@@ -1,4 +1,9 @@
+#include <Arduino.h>
+#include <WiFi.h>
 #include "configuration.h"
+
+#include "wifiConnection.h"
+
 #include <WiFiManager.h>
 #include <Preferences.h>
 Preferences preferences;
@@ -89,7 +94,10 @@ void setup(){
       
       ticker.detach();
       digitalWrite(LED, LOW);
-
+    
+      //Tarea para WIFI, conecta y comprueba la conexión wifi, en caso de perderse la conexión wifi, vuelve a conectarse.
+      xTaskCreatePinnedToCore(wifiConnect,"wifiConnect",4096,NULL,1,NULL,ARDUINO_RUNNING_CORE);
+    
   }else{
 
       WiFiManager wm;
@@ -165,5 +173,5 @@ void setup(){
 }
 
 void loop(){
-  
+  vTaskDelay(10000 / portTICK_PERIOD_MS);
 }
