@@ -26,12 +26,13 @@ void wifiConnect(void * parameter){
 
     if(WiFi.status() != WL_CONNECTED){
         digitalWrite(LED, HIGH);
-        Serial.println(F("Failed to connect WIFI"));
+        Serial.println(F("Failed to Connect WIFI"));
         vTaskDelay(WIFI_RECOVER_TIME_MS / portTICK_PERIOD_MS);
     }
 
+    WiFi.setSleep(false);
+
     Serial.println(F("WIFI Connected successfully"));
-    Serial.println(F("Device IP Address: "));
     Serial.println(WiFi.localIP());
     digitalWrite(LED, LOW);
   }

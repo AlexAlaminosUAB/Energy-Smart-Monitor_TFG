@@ -3,6 +3,7 @@
 #include "configuration.h"
 
 #include "wifiConnection.h"
+#include "uploadDataRedis.h"
 
 #include <WiFiManager.h>
 #include <Preferences.h>
@@ -94,9 +95,12 @@ void setup(){
       
       ticker.detach();
       digitalWrite(LED, LOW);
-    
-      //Tarea para WIFI, conecta y comprueba la conexión wifi, en caso de perderse la conexión wifi, vuelve a conectarse.
+  
+      //Task WIFI, conecta i comproba la conexio wifi, en cas de perdre la conexio wifi, torna a conectar.
       xTaskCreatePinnedToCore(wifiConnect,"wifiConnect",4096,NULL,1,NULL,ARDUINO_RUNNING_CORE);
+    
+      //Task per conectarse a la base de dades, en caso de perdre la conexio, torna a conectarse.
+      xTaskCreate(redisConnect,"redisConnect",8192,NULL,5,NULL);
     
   }else{
 
@@ -153,9 +157,9 @@ void setup(){
         preferences.putString("voltValue", voltValue);
         preferences.putString("wifiSSID", gettedWiFiSSID);
         preferences.putString("wifiPASS", gettedWiFiPass);
-        Serial.println(F("Datos guardados en la memoria flash!"));
+        Serial.println(F("Dades desades a la memoria flash!"));
       }else{
-        Serial.println(F("NO se han podido guardar los datos en la memoria flash!"));
+        Serial.println(F("NO s'han pogut desar les dades a la memoria flash!"));
       }
 
 
