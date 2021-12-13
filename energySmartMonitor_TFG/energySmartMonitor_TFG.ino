@@ -5,7 +5,7 @@
 #include "configuration.h"
 
 #include "wifiConnection.h"
-#include "uploadDataRedis.h"
+#include "ntpTime.h"
 #include "electricitySensorMeasure.h"
 
 #include <WiFiManager.h>
@@ -17,10 +17,19 @@ Ticker ticker;
 
 EnergyMonitor emon1;
 
+float measurements[LOCAL_MEASUREMENTS];
+unsigned long measurementsTime[LOCAL_MEASUREMENTS];
+unsigned char measureIndex = 0;
+
+unsigned long contTestElementsRT = 0;
+
 float rmsAmps = 0.0;
 float rmsWatts = 0.0;
 float kW_peak = 0.0;
 float kWh_acum = 0.0;
+
+bool timeSetted = false;
+bool measure_initValuesSetted = false;
 
 int LED = LED_BUILTIN;
 
@@ -34,11 +43,14 @@ String global_voltValue = "";
 String global_wifiSSID = "";
 String global_wifiPASS = "";
 
-String selectTimeZone ="<select name=\"timezone_offset\"> <option value=\"-12\">(GMT -12:00) Eniwetok, Kwajalein</option> <option value=\"-11\">(GMT -11:00) Midway Island, Samoa</option> <option value=\"-10\">(GMT -10:00) Hawaii</option> <option value=\"-9.5\">(GMT -9:30) Taiohae</option> <option value=\"-9\">(GMT -9:00) Alaska</option> <option value=\"-8\">(GMT -8:00) Pacific Time (US &amp; Canada)</option> <option value=\"-7\">(GMT -7:00) Mountain Time (US &amp; Canada)</option> <option value=\"-6\">(GMT -6:00) Central Time (US &amp; Canada), Mexico City</option> <option value=\"-5\">(GMT -5:00) Eastern Time (US &amp; Canada), Bogota, Lima</option> <option value=\"-4.5\">(GMT -4:30) Caracas</option> <option value=\"-4\">(GMT -4:00) Atlantic Time (Canada), Caracas, La Paz</option> <option value=\"-3.5\">(GMT -3:30) Newfoundland</option> <option value=\"-3\">(GMT -3:00) Brazil, Buenos Aires, Georgetown</option> <option value=\"-2\">(GMT -2:00) Mid-Atlantic</option> <option value=\"-1\">(GMT -1:00) Azores, Cape Verde Islands</option> <option value=\"+0\">(GMT) Western Europe Time, London, Lisbon, Casablanca</option> <option value=\"+1\" selected=\"selected\" >(GMT +1:00) Brussels, Copenhagen, Madrid, Paris</option> <option value=\"+2\">(GMT +2:00) Kaliningrad, South Africa</option> <option value=\"+3\">(GMT +3:00) Baghdad, Riyadh, Moscow, St. Petersburg</option> <option value=\"+3.5\">(GMT +3:30) Tehran</option> <option value=\"+4\">(GMT +4:00) Abu Dhabi, Muscat, Baku, Tbilisi</option> <option value=\"+4.5\">(GMT +4:30) Kabul</option> <option value=\"+5\">(GMT +5:00) Ekaterinburg, Islamabad, Karachi, Tashkent</option> <option value=\"+5.5\">(GMT +5:30) Bombay, Calcutta, Madras, New Delhi</option> <option value=\"+5.75\">(GMT +5:45) Kathmandu, Pokhara</option> <option value=\"+6\">(GMT +6:00) Almaty, Dhaka, Colombo</option> <option value=\"+6.5\">(GMT +6:30) Yangon, Mandalay</option> <option value=\"+7\">(GMT +7:00) Bangkok, Hanoi, Jakarta</option> <option value=\"+8\">(GMT +8:00) Beijing, Perth, Singapore, Hong Kong</option> <option value=\"+8.75\">(GMT +8:45) Eucla</option> <option value=\"+9\">(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk</option> <option value=\"+9.5\">(GMT +9:30) Adelaide, Darwin</option> <option value=\"+10\">(GMT +10:00) Eastern Australia, Guam, Vladivostok</option> <option value=\"+10.5\">(GMT +10:30) Lord Howe Island</option> <option value=\"+11\">(GMT +11:00) Magadan, Solomon Islands, New Caledonia</option> <option value=\"+11.5\">(GMT +11:30) Norfolk Island</option> <option value=\"+12\">(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka</option> <option value=\"+12.75\">(GMT +12:45) Chatham Islands</option> <option value=\"+13\">(GMT +13:00) Apia, Nukualofa</option> <option value=\"+14\">(GMT +14:00) Line Islands, Tokelau</option> </select>";
-
 EnergyMonitor emon2;
+unsigned char measureIndexGeneration = 0;
+
+byte currentHour;
+byte nextHourUpload;
 
 float kWh_acumGeneration = 0.0;
+float kWh_acumGeneration_upd = 0.0;
 float rmsWattsGeneration = 0.0;
 float kW_peakGeneration = 0.0;
 float rmsAmpsGeneration = 0.0;
@@ -127,14 +139,17 @@ void setup(){
       //Task WIFI, conecta i comproba la conexio wifi, en cas de perdre la conexio wifi, torna a conectar.
       xTaskCreatePinnedToCore(wifiConnect,"wifiConnect",4096,NULL,1,NULL,ARDUINO_RUNNING_CORE);
     
-      //Task per conectarse a la base de dades, en caso de perdre la conexio, torna a conectarse.
+      //Task per conectarse a la base de dades, en cas de perdre la connexió, torna a conectar-se.
       xTaskCreate(redisConnect,"redisConnect",8192,NULL,5,NULL);
     
-      //Task par mesurar el consum d'energia (amps) cada segon.
+      //Task per mesurar el consum d'energia (amps) cada segon.
       xTaskCreate(measureConsumption,"measureConsumption",4096,NULL,4,NULL);
 
-      //Task par mesurar la generació d'energia (amps).
+      //Task per mesurar la generació d'energia (amps).
       xTaskCreate(measureGeneration,"measureGeneration",4096,NULL,6,NULL);
+    
+      //Task per sincronitzar el rellotge.
+      xTaskCreate(updateTimeNTP,"updateTimeNTP",4096,NULL,1,NULL);
     
   }else{
 
@@ -151,7 +166,7 @@ void setup(){
       wm.addParameter(&custom_redis_server_port);
       WiFiManagerParameter custom_redis_server_pass("serverPASS", "Redis server Password", "", 25, " type='password' ");
       wm.addParameter(&custom_redis_server_pass);
-      WiFiManagerParameter custom_time_utc2("<br><br><label for=\"timeUTC\">Select your time zone</label><select name=\"timeUTC\"> <option value=\"-12\">(GMT -12:00) Eniwetok, Kwajalein</option> <option value=\"-11\">(GMT -11:00) Midway Island, Samoa</option> <option value=\"-10\">(GMT -10:00) Hawaii</option> <option value=\"-9.5\">(GMT -9:30) Taiohae</option> <option value=\"-9\">(GMT -9:00) Alaska</option> <option value=\"-8\">(GMT -8:00) Pacific Time (US &amp; Canada)</option> <option value=\"-7\">(GMT -7:00) Mountain Time (US &amp; Canada)</option> <option value=\"-6\">(GMT -6:00) Central Time (US &amp; Canada), Mexico City</option> <option value=\"-5\">(GMT -5:00) Eastern Time (US &amp; Canada), Bogota, Lima</option> <option value=\"-4.5\">(GMT -4:30) Caracas</option> <option value=\"-4\">(GMT -4:00) Atlantic Time (Canada), Caracas, La Paz</option> <option value=\"-3.5\">(GMT -3:30) Newfoundland</option> <option value=\"-3\">(GMT -3:00) Brazil, Buenos Aires, Georgetown</option> <option value=\"-2\">(GMT -2:00) Mid-Atlantic</option> <option value=\"-1\">(GMT -1:00) Azores, Cape Verde Islands</option> <option value=\"+0\">(GMT) Western Europe Time, London, Lisbon, Casablanca</option> <option value=\"+1\" selected=\"selected\">(GMT +1:00) Brussels, Copenhagen, Madrid, Paris</option> <option value=\"+2\">(GMT +2:00) Kaliningrad, South Africa</option> <option value=\"+3\">(GMT +3:00) Baghdad, Riyadh, Moscow, St. Petersburg</option> <option value=\"+3.5\">(GMT +3:30) Tehran</option> <option value=\"+4\">(GMT +4:00) Abu Dhabi, Muscat, Baku, Tbilisi</option> <option value=\"+4.5\">(GMT +4:30) Kabul</option> <option value=\"+5\">(GMT +5:00) Ekaterinburg, Islamabad, Karachi, Tashkent</option> <option value=\"+5.5\">(GMT +5:30) Bombay, Calcutta, Madras, New Delhi</option> <option value=\"+5.75\">(GMT +5:45) Kathmandu, Pokhara</option> <option value=\"+6\">(GMT +6:00) Almaty, Dhaka, Colombo</option> <option value=\"+6.5\">(GMT +6:30) Yangon, Mandalay</option> <option value=\"+7\">(GMT +7:00) Bangkok, Hanoi, Jakarta</option> <option value=\"+8\">(GMT +8:00) Beijing, Perth, Singapore, Hong Kong</option> <option value=\"+8.75\">(GMT +8:45) Eucla</option> <option value=\"+9\">(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk</option> <option value=\"+9.5\">(GMT +9:30) Adelaide, Darwin</option> <option value=\"+10\">(GMT +10:00) Eastern Australia, Guam, Vladivostok</option> <option value=\"+10.5\">(GMT +10:30) Lord Howe Island</option> <option value=\"+11\">(GMT +11:00) Magadan, Solomon Islands, New Caledonia</option> <option value=\"+11.5\">(GMT +11:30) Norfolk Island</option> <option value=\"+12\">(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka</option> <option value=\"+12.75\">(GMT +12:45) Chatham Islands</option> <option value=\"+13\">(GMT +13:00) Apia, Nukualofa</option> <option value=\"+14\">(GMT +14:00) Line Islands, Tokelau</option> </select>");
+      WiFiManagerParameter custom_time_utc2("<br><br><label for=\"timeUTC\">Select your time zone</label><select name=\"timeUTC\"> <option value=\"-12\">(GMT -12:00) Eniwetok, Kwajalein</option> <option value=\"-11\">(GMT -11:00) Midway Island, Samoa</option> <option value=\"-10\">(GMT -10:00) Hawaii</option> <option value=\"-9.5\">(GMT -9:30) Taiohae</option> <option value=\"-9\">(GMT -9:00) Alaska</option> <option value=\"-8\">(GMT -8:00) Pacific Time (US &amp; Canada)</option> <option value=\"-7\">(GMT -7:00) Mountain Time (US &amp; Canada)</option> <option value=\"-6\">(GMT -6:00) Central Time (US &amp; Canada), Mexico City</option> <option value=\"-5\">(GMT -5:00) Eastern Time (US &amp; Canada), Bogota, Lima</option> <option value=\"-4.5\">(GMT -4:30) Caracas</option> <option value=\"-4\">(GMT -4:00) Atlantic Time (Canada), Caracas, La Paz</option> <option value=\"-3.5\">(GMT -3:30) Newfoundland</option> <option value=\"-3\">(GMT -3:00) Brazil, Buenos Aires, Georgetown</option> <option value=\"-2\">(GMT -2:00) Mid-Atlantic</option> <option value=\"-1\">(GMT -1:00) Azores, Cape Verde Islands</option> <option value=\"+1\">(GMT +1:00) Western Europe Time, London, Lisbon, Casablanca</option> <option value=\"+2\" selected=\"selected\">(GMT +2:00) Brussels, Copenhagen, Madrid, Paris</option> <option value=\"+2\">(GMT +2:00) Kaliningrad, South Africa</option> <option value=\"+3\">(GMT +3:00) Baghdad, Riyadh, Moscow, St. Petersburg</option> <option value=\"+3.5\">(GMT +3:30) Tehran</option> <option value=\"+4\">(GMT +4:00) Abu Dhabi, Muscat, Baku, Tbilisi</option> <option value=\"+4.5\">(GMT +4:30) Kabul</option> <option value=\"+5\">(GMT +5:00) Ekaterinburg, Islamabad, Karachi, Tashkent</option> <option value=\"+5.5\">(GMT +5:30) Bombay, Calcutta, Madras, New Delhi</option> <option value=\"+5.75\">(GMT +5:45) Kathmandu, Pokhara</option> <option value=\"+6\">(GMT +6:00) Almaty, Dhaka, Colombo</option> <option value=\"+6.5\">(GMT +6:30) Yangon, Mandalay</option> <option value=\"+7\">(GMT +7:00) Bangkok, Hanoi, Jakarta</option> <option value=\"+8\">(GMT +8:00) Beijing, Perth, Singapore, Hong Kong</option> <option value=\"+8.75\">(GMT +8:45) Eucla</option> <option value=\"+9\">(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk</option> <option value=\"+9.5\">(GMT +9:30) Adelaide, Darwin</option> <option value=\"+10\">(GMT +10:00) Eastern Australia, Guam, Vladivostok</option> <option value=\"+10.5\">(GMT +10:30) Lord Howe Island</option> <option value=\"+11\">(GMT +11:00) Magadan, Solomon Islands, New Caledonia</option> <option value=\"+11.5\">(GMT +11:30) Norfolk Island</option> <option value=\"+12\">(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka</option> <option value=\"+12.75\">(GMT +12:45) Chatham Islands</option> <option value=\"+13\">(GMT +13:00) Apia, Nukualofa</option> <option value=\"+14\">(GMT +14:00) Line Islands, Tokelau</option> </select>");
       wm.addParameter(&custom_time_utc2);
       WiFiManagerParameter custom_time_utc("timeUTC", "", "", 25, " type='number' min='-12' max='14' style='display:none;' disabled ");
       wm.addParameter(&custom_time_utc);
@@ -195,6 +210,7 @@ void setup(){
       }else{
         Serial.println(F("NO s'han pogut desar les dades a la memoria flash!"));
       }
+
 
       ticker.detach();
       digitalWrite(LED, LOW);
