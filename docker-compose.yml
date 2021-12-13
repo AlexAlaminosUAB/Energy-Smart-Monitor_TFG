@@ -2,10 +2,6 @@ version: "3.9"
 services:
   apache:
     image: php-redis-alex:latest
-    #image: marvambass/apache2-ssl-secure
-    #image: jorgeandrada/php-redis
-    #container_name: apache
-    #build: ./dockeralex
     restart: unless-stopped
     volumes: 
       - ./key/:/etc/apache2/external/
@@ -32,14 +28,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./dataNILMTK/:/root/data/
-    #ports:
-      #- "8888:8888"
     network_mode: host
-    #networks:
-      #- backend
-      #- host
     command: cron -f
-#Cuidado, falta añadir el dokerfile con el comando cron para arrancar el cron en este contenedor o alguna forma de añadir el comando en este archivo, pero cuidado en las ultimas versiones se ha de hacer con el dokerfile.
 networks:
     backend:
       name: backend
