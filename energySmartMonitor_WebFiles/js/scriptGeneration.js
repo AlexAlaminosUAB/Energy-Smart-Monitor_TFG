@@ -48,8 +48,8 @@ function showBarChartGeneration() {
     }
 
 
-    console.log(arrayLabels);
-    console.log(arrayData);
+    //console.log(arrayLabels);
+    //console.log(arrayData);
 
 
 

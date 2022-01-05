@@ -40,11 +40,11 @@ function showDoughnut(){
   if (request.readyState === request.DONE) {
       if (request.status === 200) {
           json_response=JSON.parse(request.responseText);
-          console.log(json_response);
+          //console.log(json_response);
       }
   }
 
-  var colorsArray = {"Electric Vehicle":'#F44336',"Air Conditioner":'#E91E63',"Dryer":'#9C27B0',"Microwave":'#673AB7',"Oven":'#3F51B5',"Heater":'#795548',"Refrigerator":'#03A9F4',"Dishwasher":'#00BCD4',"Washer":'#4CAF50',"Electric Hob":'#9E9E9E',"Light":'#CDDC39',"Outlet":'#FFC107',"Other":'#607D8B'};
+  var colorsArray = {"Electric Vehicle":'#F44336',"Air Conditioner":'#E91E63',"Dryer":'#9C27B0',"Microwave":'#673AB7',"Oven":'#3F51B5',"Electric heater":'#795548',"Refrigerator":'#03A9F4',"Dishwasher":'#00BCD4',"Washer":'#4CAF50',"Electric Hob":'#9E9E9E',"Light":'#CDDC39',"Outlet":'#FFC107',"Other":'#607D8B'};
 
 
     // chart colors
@@ -269,8 +269,8 @@ function showChartLine() {
 
   }
 
-  console.log(arrayLabels);
-  console.log(arrayData);
+  //console.log(arrayLabels);
+  //console.log(arrayData);
 
 
     var config = null;

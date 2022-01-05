@@ -59,6 +59,7 @@ session_start();
       }
     }
 
+
     $redis = new Redis();
     $redis->connect('redis', 6379);
 
@@ -70,22 +71,34 @@ session_start();
       $nameFile = $arrayFileNames[$applianceTypeModel];
       $dir="/models/";
 
-      $myfile = fopen($dir.$nameFile, "w") or die("Unable to open file!");
+      $dataModel_kW = [];
 
       foreach ($reversed_rtList as $elem_rtList){
         $elemtemp_rtList = json_decode($elem_rtList, true);
 
         if($elemtemp_rtList["epochTime"]>=$startTimeModel_epoch and $elemtemp_rtList["epochTime"]<=$endTimeModel_epoch){
-          $rowCSV = $elemtemp_rtList["epochTime"]." ".number_format(round($elemtemp_rtList["kW"]*1000,2),2)."\n";
-          fwrite($myfile, $rowCSV);
-        }else{
-          $rowCSV = $elemtemp_rtList["epochTime"]." 0.00\n";
-          fwrite($myfile, $rowCSV);
+          $valkW = number_format(round($elemtemp_rtList["kW"]*1000,2),2);
+          array_push($dataModel_kW, $valkW);
         }
 
       }
 
+      $dataModel_Index = 0;
+
+      $myfile = fopen($dir.$nameFile, "w") or die("Unable to open file!");
+      for ($epochIndex = 0; $epochIndex < 86402; $epochIndex++) {
+        $rowCSV = $epochIndex." ".number_format(round($dataModel_kW[$dataModel_Index],2),2)."\n";
+        fwrite($myfile, $rowCSV);
+
+        if( $dataModel_Index == (count($dataModel_kW)-1) ){
+          $dataModel_Index = 0;
+        }else{
+          $dataModel_Index = $dataModel_Index + 1;
+        }
+
+      }
       fclose($myfile);
+
 
     }
 

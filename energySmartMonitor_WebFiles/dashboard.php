@@ -54,7 +54,7 @@ if(!isset($_SESSION["newsession"])){
    $colorsAppliances["Dryer"]="bg-purple";
    $colorsAppliances["Microwave"]="bg-deep-purple";
    $colorsAppliances["Oven"]="bg-indigo";
-   $colorsAppliances["Heater"]="bg-brown";
+   $colorsAppliances["Electric heater"]="bg-brown";
    $colorsAppliances["Refrigerator"]="bg-light-blue";
    $colorsAppliances["Dishwasher"]="bg-cyan";
    $colorsAppliances["Water Heater"]="bg-teal";
@@ -69,7 +69,7 @@ if(!isset($_SESSION["newsession"])){
    $iconsArray["Dryer"]='<div class="span3" title="Code: 0xe809"><i class="demo-icon icon-dryer"></i></div>';
    $iconsArray["Microwave"]='<div class="span3" title="Code: 0xe80e"><i class="demo-icon icon-microwave"></i></div>';
    $iconsArray["Oven"]='<div class="span3" title="Code: 0xe80b"><i class="demo-icon icon-oven"></i></div>';
-   $iconsArray["Heater"]='<div class="span3" title="Code: 0xe80f"><i class="demo-icon icon-heater"></i></div>';
+   $iconsArray["Electric heater"]='<div class="span3" title="Code: 0xe80f"><i class="demo-icon icon-heater"></i></div>';
    $iconsArray["Refrigerator"]='<div class="span3" title="Code: 0xe803"><i class="demo-icon icon-refrigerator"></i></div>';
    $iconsArray["Dishwasher"]='<div class="span3" title="Code: 0xe80c"><i class="demo-icon icon-dishwasher"></i></div>';
    $iconsArray["Water Heater"]='<div class="span3" title="Code: 0xe810"><i class="demo-icon icon-water-heater"></i></div>';
@@ -445,14 +445,14 @@ if(!isset($_SESSION["newsession"])){
 
     <!-- Custom Js -->
     <script src="js/admin.js"></script>
-    
+
     <script src="js/pages/charts/jquery-knob.js"></script>
-    <script src="js/pages/charts/chartjs.js"></script>
+    <!--<script src="js/pages/charts/chartjs.js"></script>-->
 
     <script src="js/scriptDashboard.js"></script>
 
     <!-- Demo Js -->
-    <script src="js/demo.js"></script>
+    <!--<script src="js/demo.js"></script>-->
 
 
 

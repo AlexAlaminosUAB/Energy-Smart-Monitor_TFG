@@ -195,14 +195,14 @@ if(!isset($_SESSION["newsession"])){
 
     <!-- Custom Js -->
     <script src="js/admin.js"></script>
-    
+
     <script src="js/pages/charts/jquery-knob.js"></script>
-    <script src="js/pages/charts/chartjs.js"></script>
+    <!--<script src="js/pages/charts/chartjs.js"></script>-->
 
     <script src="js/scriptGeneration.js"></script>
 
     <!-- Demo Js -->
-    <script src="js/demo.js"></script>
+    <!--<script src="js/demo.js"></script>-->
 
 
 
