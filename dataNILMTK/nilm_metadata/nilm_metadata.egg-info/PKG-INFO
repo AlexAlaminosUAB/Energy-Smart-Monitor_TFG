@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: nilm-metadata
+Version: 0.2.5
+Summary: Concatenate NILM metadata
+Home-page: https://github.com/nilmtk/nilm_metadata
+Author: Jack Kelly
+Author-email: jack.kelly@imperial.ac.uk
+License: MIT
+Keywords: smartmeters power electricity energy analytics redd disaggregation nilm nialm
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+License-File: LICENSE
+
+UNKNOWN
+
