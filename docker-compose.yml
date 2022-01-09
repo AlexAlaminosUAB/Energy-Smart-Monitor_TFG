@@ -1,11 +1,12 @@
 version: "3.9"
 services:
   apache:
-    image: php-redis-alex:latest
+    image: "aarmdlr/php-redis-alex"
+    container_name: php-apache-webserver
     restart: unless-stopped
     volumes: 
       - ./key/:/etc/apache2/external/
-      - /home/alex/ftp/files/AdminBSBMaterialDesign-master/:/var/www/html
+      - ./energySmartMonitor_WebFiles/:/var/www/html
       - ./dataNILMTK/nilmtk2/models/:/models/
     ports:
       - "80:80"
@@ -23,8 +24,8 @@ services:
     networks:
       - backend
   nilmtk:
-    image: "nilmtk"
-    container_name: nilmtk
+    image: "aarmdlr/nilmtk-alex-energysmartmonitor"
+    container_name: nilmtk-alex-energysmartmonitor
     restart: unless-stopped
     volumes:
       - ./dataNILMTK/:/root/data/
